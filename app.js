@@ -129,6 +129,12 @@ const showChoose = (chatId) => {
                         text: 'Просчет тарифа для 2 зонного счетчика',
                         callback_data: '2'
                     }
+                ],
+                [
+                    {
+                        text: 'Розбудить',
+                        url: 'https://electro-tarif-telegram-bot.herokuapp.com/'
+                    }
                 ]
             ]
         }
