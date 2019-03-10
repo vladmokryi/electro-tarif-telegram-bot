@@ -132,7 +132,7 @@ const showChoose = (chatId) => {
                 ],
                 [
                     {
-                        text: 'Розбудить',
+                        text: 'Разбудить',
                         url: 'https://electro-tarif-telegram-bot.herokuapp.com/'
                     }
                 ]
