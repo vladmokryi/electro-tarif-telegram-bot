@@ -138,3 +138,17 @@ const showChoose = (chatId) => {
 const roundValue = (value, digits) => {
     return parseFloat(parseFloat(value).toFixed(digits));
 };
+
+const express = require('express');
+const app = express();
+
+app.get('/', function (req, res) {
+    res.json({ message: 'Ok'});
+});
+
+const server = app.listen(process.env.PORT  || 5000, function () {
+    const host = server.address().address;
+    const port = server.address().port;
+
+    console.log('Web server started at http://%s:%s', host, port);
+});
