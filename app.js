@@ -2,7 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 
 // replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.TOKEN || '';
-
+console.log(token);
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, {polling: true});
 
@@ -35,6 +35,7 @@ bot.on('callback_query', query => {
 });
 
 bot.on('message', (msg) => {
+    console.log(`Message from ${msg.from.first_name} ${msg.from.last_name} - ${msg.text}`);
     const chatId = msg.chat.id;
     if (activeChats[chatId]) {
         activeChats[chatId].data.push(msg.text);
