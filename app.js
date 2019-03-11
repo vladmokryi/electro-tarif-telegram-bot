@@ -2,7 +2,6 @@ const TelegramBot = require('node-telegram-bot-api');
 
 // replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.TOKEN || '';
-console.log(token);
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, {polling: true});
 
@@ -51,8 +50,7 @@ bot.on('message', (msg) => {
             }
         } else {
             //not defined
-            bot.sendMessage(chatId, 'Ой, ошибока');
-            showChoose(chatId);
+            handleError(new Error("Callback value on active chat not defined"), chatId);
         }
     } else {
         showChoose(chatId);
@@ -60,9 +58,16 @@ bot.on('message', (msg) => {
 });
 
 bot.on('polling_error', (error) => {
-    console.log(error);  // => 'EFATAL'
-    bot.sendMessage(chatId, 'Ой, ошибока');
+    handleError(error);
 });
+
+const handleError = (error, chatId) => {
+    console.log(error);
+    if (chatId) {
+        bot.sendMessage(chatId, 'Ой, ошибочка');
+        showChoose(chatId);
+    }
+};
 
 const calcCommandOne = (chatId) => {
     const value = parseInt(activeChats[chatId].data[0]);
