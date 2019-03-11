@@ -67,16 +67,19 @@ bot.on('polling_error', (error) => {
 const calcCommandOne = (chatId) => {
     const value = parseInt(activeChats[chatId].data[0]);
     if (value) {
-        let result;
-        if (value > 100) {
-            result = 100 * TARIF_BEFORE_100 + (value - 100) * TARIF_AFTER_100;
-        } else {
-            result = value * TARIF_BEFORE_100;
-        }
+        let result = calcCommandOneResult(value);
 
         return bot.sendMessage(chatId, `К оплате: ${result.toFixed(2)} грн.`);
     } else {
         return bot.sendMessage(chatId, 'Ой, ошибока');
+    }
+};
+
+const calcCommandOneResult = (value) => {
+    if (value > 100) {
+        return 100 * TARIF_BEFORE_100 + (value - 100) * TARIF_AFTER_100;
+    } else {
+        return value * TARIF_BEFORE_100;
     }
 };
 
@@ -90,18 +93,18 @@ const calcCommandTwo = (chatId) => {
         let dayBefore100, nightBefore100, dayAfter100KW, dayAfter100, nightAfter100KW, nightAfter100, dayBefore100KW,
             nightBefore100KW;
         if (summary >= 100) {
-            dayBefore100KW = parseInt(100 * dayPercent);
+            dayBefore100KW = roundValue(100 * dayPercent,0);
             dayBefore100 = roundValue(dayBefore100KW * TARIF_BEFORE_100, 2);
-            nightBefore100KW = parseInt(100 * nightPercent);
+            nightBefore100KW = roundValue(100 * nightPercent, 0);
             nightBefore100 = roundValue(nightBefore100KW * TARIF_BEFORE_100 * COEFFICIENT_NIGHT, 2);
-            dayAfter100KW = parseInt((summary - 100) * dayPercent);
+            dayAfter100KW = dayValue - dayBefore100KW;
             dayAfter100 = roundValue(dayAfter100KW * TARIF_AFTER_100, 2);
-            nightAfter100KW = parseInt((summary - 100) * nightPercent);
+            nightAfter100KW = nightValue - nightBefore100KW;
             nightAfter100 = roundValue(nightAfter100KW * TARIF_AFTER_100 * COEFFICIENT_NIGHT, 2);
         } else {
-            dayBefore100KW = parseInt(summary * dayPercent);
+            dayBefore100KW = roundValue(summary * dayPercent, 0);
             dayBefore100 = roundValue(dayBefore100KW * TARIF_BEFORE_100, 2);
-            nightBefore100KW = parseInt(summary * nightPercent);
+            nightBefore100KW = roundValue(summary * nightPercent, 0);
             nightBefore100 = roundValue(nightBefore100KW * TARIF_BEFORE_100 * COEFFICIENT_NIGHT, 2);
             dayAfter100KW = 0;
             dayAfter100 = 0;
@@ -110,17 +113,21 @@ const calcCommandTwo = (chatId) => {
         }
 
         const result = dayBefore100 + nightBefore100 + dayAfter100 + nightAfter100;
+        const resultCommandOne = calcCommandOneResult(summary);
 
         const md = `
-Тариф < 100 КВт: ${TARIF_BEFORE_100.toFixed(2)} грн.
-Тариф > 100 КВт: ${TARIF_AFTER_100.toFixed(2)} грн.
-Всего:           ${summary} КВт
-День:            ${parseInt(dayPercent * 100)} %
-Ночь:            ${parseInt(nightPercent * 100)} %
-День < 100КВт:   ${dayBefore100KW} КВт - ${dayBefore100.toFixed(2)} грн.
-Ночь < 100КВт:   ${nightBefore100KW} КВт - ${nightBefore100.toFixed(2)} грн.
-День > 100КВт:   ${dayAfter100KW} КВт - ${dayAfter100.toFixed(2)} грн.
-Ночь > 100КВт:   ${nightAfter100KW} КВт - ${nightAfter100.toFixed(2)} грн.
+Тариф < 100 КВт:      ${TARIF_BEFORE_100.toFixed(2)} грн.
+Тариф > 100 КВт:      ${TARIF_AFTER_100.toFixed(2)} грн.
+---
+Всего:                ${summary} КВт
+День:                 ${roundValue(dayPercent * 100, 0)} %
+Ночь:                 ${roundValue(nightPercent * 100, 0)} %
+День < 100КВт:        ${dayBefore100KW} КВт - ${dayBefore100.toFixed(2)} грн.
+Ночь < 100КВт:        ${nightBefore100KW} КВт - ${nightBefore100.toFixed(2)} грн.
+День > 100КВт:        ${dayAfter100KW} КВт - ${dayAfter100.toFixed(2)} грн.
+Ночь > 100КВт:        ${nightAfter100KW} КВт - ${nightAfter100.toFixed(2)} грн.
+---
+Экономия:             ${((100*result) / resultCommandOne).toFixed(2)} грн. (${(100 - ((100*result) / resultCommandOne)).toFixed(0)}%)
         `;
         bot.sendMessage(chatId, md, {parse_mode: 'Markdown'});
 
