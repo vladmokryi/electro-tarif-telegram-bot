@@ -98,7 +98,7 @@ const calcCommandTwo = (chatId) => {
         let dayBefore100, nightBefore100, dayAfter100KW, dayAfter100, nightAfter100KW, nightAfter100, dayBefore100KW,
             nightBefore100KW;
         if (summary >= 100) {
-            dayBefore100KW = roundValue(100 * dayPercent,0);
+            dayBefore100KW = roundValue(100 * dayPercent, 0);
             dayBefore100 = roundValue(dayBefore100KW * TARIF_BEFORE_100, 2);
             nightBefore100KW = roundValue(100 * nightPercent, 0);
             nightBefore100 = roundValue(nightBefore100KW * TARIF_BEFORE_100 * COEFFICIENT_NIGHT, 2);
@@ -132,7 +132,7 @@ const calcCommandTwo = (chatId) => {
 День > 100КВт:        ${dayAfter100KW} КВт - ${dayAfter100.toFixed(2)} грн.
 Ночь > 100КВт:        ${nightAfter100KW} КВт - ${nightAfter100.toFixed(2)} грн.
 ---
-Экономия:             ${((100*result) / resultCommandOne).toFixed(2)} грн. (${(100 - ((100*result) / resultCommandOne)).toFixed(0)}%)
+Экономия:             ${((100 * result) / resultCommandOne).toFixed(2)} грн. (${(100 - ((100 * result) / resultCommandOne)).toFixed(0)}%)
         `;
         bot.sendMessage(chatId, md, {parse_mode: 'Markdown'});
 
@@ -176,14 +176,15 @@ const roundValue = (value, digits) => {
 
 const express = require('express');
 const app = express();
+const path = require('path');
 
 app.get('/', function (req, res) {
-    res.json({message: 'Ok'});
+    res.sendFile(path.join(__dirname + '/index.html'));
 });
 
 const server = app.listen(process.env.PORT || 5000, function () {
     const host = server.address().address;
     const port = server.address().port;
 
-    console.log('Web server started at http://%s:%s', host, port);
+    console.log(`Web server started at http://${host}:${port}`, host, port);
 });
