@@ -87,10 +87,27 @@ const calcCommandTwo = (chatId) => {
         const summary = dayValue + nightValue;
         const dayPercent = roundValue(dayValue / summary, 2);
         const nightPercent = roundValue(nightValue / summary, 2);
-        const dayBefore100 = roundValue(100 * dayPercent * TARIF_BEFORE_100, 2);
-        const nightBefore100 = roundValue(100 * nightPercent * TARIF_BEFORE_100 * COEFFICIENT_NIGHT, 2);
-        const dayAfter100 = roundValue(roundValue((summary - 100) * dayPercent, 0) * TARIF_AFTER_100, 2);
-        const nightAfter100 = roundValue(roundValue((summary - 100) * nightPercent, 0) * TARIF_AFTER_100 * COEFFICIENT_NIGHT, 2);
+        let dayBefore100, nightBefore100, dayAfter100KW, dayAfter100, nightAfter100KW, nightAfter100, dayBefore100KW,
+            nightBefore100KW;
+        if (summary >= 100) {
+            dayBefore100KW = parseInt(100 * dayPercent);
+            dayBefore100 = roundValue(dayBefore100KW * TARIF_BEFORE_100, 2);
+            nightBefore100KW = parseInt(100 * nightPercent);
+            nightBefore100 = roundValue(nightBefore100KW * TARIF_BEFORE_100 * COEFFICIENT_NIGHT, 2);
+            dayAfter100KW = parseInt((summary - 100) * dayPercent);
+            dayAfter100 = roundValue(dayAfter100KW * TARIF_AFTER_100, 2);
+            nightAfter100KW = parseInt((summary - 100) * nightPercent);
+            nightAfter100 = roundValue(nightAfter100KW * TARIF_AFTER_100 * COEFFICIENT_NIGHT, 2);
+        } else {
+            dayBefore100KW = parseInt(summary * dayPercent);
+            dayBefore100 = roundValue(dayBefore100KW * TARIF_BEFORE_100, 2);
+            nightBefore100KW = parseInt(summary * nightPercent);
+            nightBefore100 = roundValue(nightBefore100KW * TARIF_BEFORE_100 * COEFFICIENT_NIGHT, 2);
+            dayAfter100KW = 0;
+            dayAfter100 = 0;
+            nightAfter100KW = 0;
+            nightAfter100 = 0;
+        }
 
         const result = dayBefore100 + nightBefore100 + dayAfter100 + nightAfter100;
 
@@ -100,10 +117,10 @@ const calcCommandTwo = (chatId) => {
 Всего:           ${summary} КВт
 День:            ${parseInt(dayPercent * 100)} %
 Ночь:            ${parseInt(nightPercent * 100)} %
-День < 100КВт:   ${dayBefore100.toFixed(2)} грн.
-Ночь < 100КВт:   ${nightBefore100.toFixed(2)} грн.
-День > 100КВт:   ${dayAfter100.toFixed(2)} грн.
-Ночь > 100КВт:   ${nightAfter100.toFixed(2)} грн.
+День < 100КВт:   ${dayBefore100KW} КВт - ${dayBefore100.toFixed(2)} грн.
+Ночь < 100КВт:   ${nightBefore100KW} КВт - ${nightBefore100.toFixed(2)} грн.
+День > 100КВт:   ${dayAfter100KW} КВт - ${dayAfter100.toFixed(2)} грн.
+Ночь > 100КВт:   ${nightAfter100KW} КВт - ${nightAfter100.toFixed(2)} грн.
         `;
         bot.sendMessage(chatId, md, {parse_mode: 'Markdown'});
 
@@ -149,10 +166,10 @@ const express = require('express');
 const app = express();
 
 app.get('/', function (req, res) {
-    res.json({ message: 'Ok'});
+    res.json({message: 'Ok'});
 });
 
-const server = app.listen(process.env.PORT  || 5000, function () {
+const server = app.listen(process.env.PORT || 5000, function () {
     const host = server.address().address;
     const port = server.address().port;
 
