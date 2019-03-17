@@ -3,13 +3,15 @@ const TelegramBot = require('node-telegram-bot-api');
 // replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.TOKEN || '';
 // Create a bot that uses 'polling' to fetch new updates
-const bot = new TelegramBot(token, {polling: true});
+const bot = new TelegramBot(token, {polling: true, webHook: {port: process.env.PORT}});
 
 const TARIF_AFTER_100 = parseFloat(parseFloat(process.env.TARIF_AFTER_100 || 1.68).toFixed(2));
 const TARIF_BEFORE_100 = parseFloat(parseFloat(process.env.TARIF_BEFORE_100 || 0.9).toFixed(2));
 const COEFFICIENT_NIGHT = parseFloat(process.env.COEFFICIENT_NIGHT || 0.5);
 
 let activeChats = {};
+
+bot.setWebHook(process.env.WEBHOOK_URL);
 
 bot.on('callback_query', query => {
     const chatId = query.message.chat.id;
@@ -60,8 +62,6 @@ bot.on('message', (msg) => {
 bot.on('polling_error', (error) => {
     handleError(error);
 });
-
-bot.setWebHook(process.env.WEBHOOK_URL);
 
 const handleError = (error, chatId) => {
     console.log(error);
@@ -134,7 +134,7 @@ const calcCommandTwo = (chatId) => {
 День > 100КВт:        ${dayAfter100KW} КВт - ${dayAfter100.toFixed(2)} грн.
 Ночь > 100КВт:        ${nightAfter100KW} КВт - ${nightAfter100.toFixed(2)} грн.
 ---
-Экономия:             ${resultCommandOne-result} грн. (${(100 - ((100 * result) / resultCommandOne)).toFixed(0)}%)
+Экономия:             ${resultCommandOne - result} грн. (${(100 - ((100 * result) / resultCommandOne)).toFixed(0)}%)
         `;
         bot.sendMessage(chatId, md, {parse_mode: 'Markdown'});
 
