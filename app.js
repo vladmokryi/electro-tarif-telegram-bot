@@ -61,6 +61,8 @@ bot.on('polling_error', (error) => {
     handleError(error);
 });
 
+bot.setWebHook(process.env.WEBHOOK_URL);
+
 const handleError = (error, chatId) => {
     console.log(error);
     if (chatId) {
@@ -159,12 +161,12 @@ const showChoose = (chatId) => {
                         callback_data: '2'
                     }
                 ],
-                [
-                    {
-                        text: 'Разбудить',
-                        url: 'https://electro-tarif-telegram-bot.herokuapp.com/'
-                    }
-                ]
+                // [
+                //     {
+                //         text: 'Разбудить',
+                //         url: 'https://electro-tarif-telegram-bot.herokuapp.com/'
+                //     }
+                // ]
             ]
         }
     });
