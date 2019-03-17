@@ -136,9 +136,9 @@ const calcCommandTwo = (chatId) => {
 ---
 Экономия:             ${resultCommandOne - result} грн. (${(100 - ((100 * result) / resultCommandOne)).toFixed(0)}%)
         `;
-        bot.sendMessage(chatId, md, {parse_mode: 'Markdown'});
-
-        return bot.sendMessage(chatId, `К оплате: *${result.toFixed(2)}* грн.`, {parse_mode: 'Markdown'});
+        return bot.sendMessage(chatId, md, {parse_mode: 'Markdown'}).then(function() {
+            bot.sendMessage(chatId, `К оплате: *${result.toFixed(2)}* грн.`, {parse_mode: 'Markdown'});
+        });
     } else {
         return bot.sendMessage(chatId, 'Ой, ошибока');
     }
