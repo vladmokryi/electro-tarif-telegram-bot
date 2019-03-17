@@ -3,7 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 // replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.TOKEN || '';
 // Create a bot that uses 'polling' to fetch new updates
-const bot = new TelegramBot(token);
+const bot = new TelegramBot(token, {webHook: {port: process.env.PORT}});
 
 const TARIF_AFTER_100 = parseFloat(parseFloat(process.env.TARIF_AFTER_100 || 1.68).toFixed(2));
 const TARIF_BEFORE_100 = parseFloat(parseFloat(process.env.TARIF_BEFORE_100 || 0.9).toFixed(2));
@@ -176,17 +176,17 @@ const roundValue = (value, digits) => {
     return parseFloat(parseFloat(value).toFixed(digits));
 };
 
-const express = require('express');
-const app = express();
-const path = require('path');
-
-app.get('/', function (req, res) {
-    res.sendFile(path.join(__dirname + '/index.html'));
-});
-
-const server = app.listen(process.env.PORT || 5000, function () {
-    const host = server.address().address;
-    const port = server.address().port;
-
-    console.log(`Web server started at http://${host}:${port}`, host, port);
-});
+// const express = require('express');
+// const app = express();
+// const path = require('path');
+//
+// app.get('/', function (req, res) {
+//     res.sendFile(path.join(__dirname + '/index.html'));
+// });
+//
+// const server = app.listen(process.env.PORT || 5000, function () {
+//     const host = server.address().address;
+//     const port = server.address().port;
+//
+//     console.log(`Web server started at http://${host}:${port}`, host, port);
+// });
