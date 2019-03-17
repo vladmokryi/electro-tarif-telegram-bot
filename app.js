@@ -3,7 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 // replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.TOKEN || '';
 // Create a bot that uses 'polling' to fetch new updates
-const bot = new TelegramBot(token, {webHook: {port: process.env.PORT}});
+const bot = new TelegramBot(token);
 
 const TARIF_AFTER_100 = parseFloat(parseFloat(process.env.TARIF_AFTER_100 || 1.68).toFixed(2));
 const TARIF_BEFORE_100 = parseFloat(parseFloat(process.env.TARIF_BEFORE_100 || 0.9).toFixed(2));
