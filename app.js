@@ -134,7 +134,7 @@ const calcCommandTwo = (chatId) => {
 День > 100КВт:        ${dayAfter100KW} КВт - ${dayAfter100.toFixed(2)} грн.
 Ночь > 100КВт:        ${nightAfter100KW} КВт - ${nightAfter100.toFixed(2)} грн.
 ---
-Экономия:             ${((100 * result) / resultCommandOne).toFixed(2)} грн. (${(100 - ((100 * result) / resultCommandOne)).toFixed(0)}%)
+Экономия:             ${resultCommandOne-result} грн. (${(100 - ((100 * result) / resultCommandOne)).toFixed(0)}%)
         `;
         bot.sendMessage(chatId, md, {parse_mode: 'Markdown'});
 
