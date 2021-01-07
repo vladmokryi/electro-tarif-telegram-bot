@@ -13,15 +13,10 @@ const TARIF_BEFORE_100 = parseFloat(parseFloat(process.env.TARIF_BEFORE_100 || 0
 const COEFFICIENT_NIGHT = parseFloat(process.env.COEFFICIENT_NIGHT || 0.5);
 
 let activeChats = {};
-const mailingIds = [];//, '818541984'];
-if (process.env.MAILING_IDS) {
-    Array.prototype.push.apply(mailingIds, process.env.MAILING_IDS.split(','));
-}
-const MAILING_STREET = process.env.MAILING_STREET || 'Гоголя';
-const MAILING_REGIONS = process.env.MAILING_REGIONS || 'plm'
 
 bot.setWebHook(process.env.WEBHOOK_URL || '');
 bot.on('callback_query', query => {
+    console.log('callback_query', query);
     const chatId = query.message.chat.id;
 
     if (query.data === '1') {
@@ -221,13 +216,13 @@ const roundValue = (value, digits) => {
     return parseFloat(parseFloat(value).toFixed(digits));
 };
 
-const express = require('express');
-const app = express();
-const path = require('path');
-
-app.get('/', function (req, res) {
-    res.sendFile(path.join(__dirname + '/index.html'));
-});
+// const express = require('express');
+// const app = express();
+// const path = require('path');
+//
+// app.get('/', function (req, res) {
+//     res.sendFile(path.join(__dirname + '/index.html'));
+// });
 
 // app.get('/mailing1', function (req, res) {
 //     bot.sendMessage(mailingIds[0], '1/n2\n3').then(() => {
@@ -235,26 +230,30 @@ app.get('/', function (req, res) {
 //     });
 // });
 
-app.get('/mailing', function (req, res) {
-    checkDisconnectModule.checkDisconnectPeriod(moment(), moment().add(2, 'days'), MAILING_REGIONS.split(';'), MAILING_STREET)
-        .then(messages => {
-            const allMessages = [];
-            mailingIds.forEach(id => {
-                Array.prototype.push.apply(allMessages, messages.map(m => bot.sendMessage(id, m)));
-            });
-            return Promise.all(allMessages);
-        })
-        .catch(error => {
-            console.log(error);
-            res.status(500).send();
-        }).finally(() => {
-        res.status(200).send();
-    });
-});
+// app.get('/mailing', function (req, res) {
+//     checkDisconnectModule.checkDisconnectPeriod(moment(), moment().add(2, 'days'), MAILING_REGIONS.split(';'), MAILING_STREET)
+//         .then(messages => {
+//             const allMessages = [];
+//             mailingIds.forEach(id => {
+//                 Array.prototype.push.apply(allMessages, messages.map(m => bot.sendMessage(id, m)));
+//             });
+//             return Promise.all(allMessages);
+//         })
+//         .catch(error => {
+//             console.log(error);
+//             res.status(500).send();
+//         }).finally(() => {
+//         res.status(200).send();
+//     });
+// });
 
-const server = app.listen(process.env.PORT || 5000, function () {
-    const host = server.address().address;
-    const port = server.address().port;
+// const server = app.listen(process.env.PORT || 5000, function () {
+//     const host = server.address().address;
+//     const port = server.address().port;
+//
+//     console.log(`Web server started at http://${host}:${port}`, host, port);
+// });
 
-    console.log(`Web server started at http://${host}:${port}`, host, port);
-});
+module.exports = {
+    botApp: bot
+}
