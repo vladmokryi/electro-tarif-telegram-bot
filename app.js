@@ -15,7 +15,7 @@ const COEFFICIENT_NIGHT = parseFloat(process.env.COEFFICIENT_NIGHT || 0.5);
 let activeChats = {};
 const mailingIds = [];//, '818541984'];
 if (process.env.MAILING_IDS) {
-    Array.prototype.push.apply(savedIds, process.env.MAILING_IDS.split(','));
+    Array.prototype.push.apply(mailingIds, process.env.MAILING_IDS.split(','));
 }
 const MAILING_STREET = process.env.MAILING_STREET || 'Гоголя';
 const MAILING_REGIONS = process.env.MAILING_REGIONS || 'plm'
