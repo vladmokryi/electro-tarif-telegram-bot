@@ -1,4 +1,7 @@
+// process.env.NTBA_FIX_319 = 1;
 const TelegramBot = require('node-telegram-bot-api');
+const checkDisconnectModule = require('./check-disconnect');
+const moment = require('moment');
 
 // replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.TOKEN || '';
@@ -10,9 +13,14 @@ const TARIF_BEFORE_100 = parseFloat(parseFloat(process.env.TARIF_BEFORE_100 || 0
 const COEFFICIENT_NIGHT = parseFloat(process.env.COEFFICIENT_NIGHT || 0.5);
 
 let activeChats = {};
+const mailingIds = [];//, '818541984'];
+if (process.env.MAILING_IDS) {
+    Array.prototype.push.apply(savedIds, process.env.MAILING_IDS.split(','));
+}
+const MAILING_STREET = process.env.MAILING_STREET || 'Гоголя';
+const MAILING_REGIONS = process.env.MAILING_REGIONS || 'plm'
 
-bot.setWebHook(process.env.WEBHOOK_URL);
-
+bot.setWebHook(process.env.WEBHOOK_URL || '');
 bot.on('callback_query', query => {
     const chatId = query.message.chat.id;
 
@@ -24,8 +32,16 @@ bot.on('callback_query', query => {
                 data: []
             };
         });
-    } else if (query.data === '2') {
+    } else if (query.data === '2' || query.data === '3') {
         bot.sendMessage(chatId, 'Введите количество КВт за день').then(function (data) {
+            activeChats[chatId] = {
+                type: query.data,
+                step: 1,
+                data: []
+            };
+        });
+    } else if (query.data === '4') {
+        bot.sendMessage(chatId, 'Введите улицу').then(function (data) {
             activeChats[chatId] = {
                 type: query.data,
                 step: 1,
@@ -36,20 +52,22 @@ bot.on('callback_query', query => {
 });
 
 bot.on('message', (msg) => {
-    console.log(`Message from ${msg.from.first_name} ${msg.from.last_name} - ${msg.text}`);
+    console.log(`Message from ${msg.from.first_name} ${msg.from.last_name} [${msg.from.id}] - ${msg.text}`);
     const chatId = msg.chat.id;
     if (activeChats[chatId]) {
         activeChats[chatId].data.push(msg.text);
         if (activeChats[chatId].type === '1') {
-            calcCommandOne(chatId).then(() => showChoose(chatId));
-        } else if (activeChats[chatId].type === '2') {
+            calcCommandOne(chatId, 0).then(() => showChoose(chatId));
+        } else if (activeChats[chatId].type === '2' || activeChats[chatId].type === '3') {
             if (activeChats[chatId].step === 1) {
                 bot.sendMessage(chatId, 'Введите количество КВт за ночь').then(function (data) {
                     activeChats[chatId].step = 2;
                 });
             } else {
-                calcCommandTwo(chatId).then(() => showChoose(chatId));
+                calcCommandTwo(chatId, activeChats[chatId].type === '3' ? 3000 : 0).then(() => showChoose(chatId));
             }
+        } else if (activeChats[chatId].type === '4') {
+            commandFour(chatId).then(() => showChoose(chatId));
         } else {
             //not defined
             handleError(new Error("Callback value on active chat not defined"), chatId);
@@ -78,31 +96,43 @@ const calcCommandOne = (chatId) => {
 
         return bot.sendMessage(chatId, `К оплате: ${result.toFixed(2)} грн.`);
     } else {
-        return bot.sendMessage(chatId, 'Ой, ошибока');
+        return bot.sendMessage(chatId, 'Ой, ошибочка');
     }
 };
 
-const calcCommandOneResult = (value) => {
-    if (value > 100) {
-        return 100 * TARIF_BEFORE_100 + (value - 100) * TARIF_AFTER_100;
+const commandFour = (chatId) => {
+    const street = activeChats[chatId].data[0];
+    if (street) {
+        return checkDisconnectModule.checkDisconnectPeriod(moment(), moment().add(2, 'days'), ['plm', 'plr'], street)
+            .then(messages => {
+                return Promise.all(messages.map(m => bot.sendMessage(chatId, m)));
+            });
+    } else {
+        return bot.sendMessage(chatId, 'Ой, ошибочка');
+    }
+};
+
+const calcCommandOneResult = (value, privilege) => {
+    if (value > privilege) {
+        return privilege * TARIF_BEFORE_100 + (value - privilege) * TARIF_AFTER_100;
     } else {
         return value * TARIF_BEFORE_100;
     }
 };
 
-const calcCommandTwo = (chatId) => {
+const calcCommandTwo = (chatId, privilege) => {
     const dayValue = parseInt(activeChats[chatId].data[0]);
     const nightValue = parseInt(activeChats[chatId].data[1]);
     if (dayValue && (nightValue || nightValue === 0)) {
         const summary = dayValue + nightValue;
-        const dayPercent = roundValue(dayValue / summary, 2);
-        const nightPercent = roundValue(nightValue / summary, 2);
+        const dayPercent = roundValue(dayValue / summary, 4);
+        const nightPercent = roundValue(nightValue / summary, 4);
         let dayBefore100, nightBefore100, dayAfter100KW, dayAfter100, nightAfter100KW, nightAfter100, dayBefore100KW,
             nightBefore100KW;
-        if (summary >= 100) {
-            dayBefore100KW = roundValue(100 * dayPercent, 0);
+        if (summary >= privilege) {
+            dayBefore100KW = roundValue(privilege * dayPercent, 0);
             dayBefore100 = roundValue(dayBefore100KW * TARIF_BEFORE_100, 2);
-            nightBefore100KW = roundValue(100 * nightPercent, 0);
+            nightBefore100KW = roundValue(privilege * nightPercent, 0);
             nightBefore100 = roundValue(nightBefore100KW * TARIF_BEFORE_100 * COEFFICIENT_NIGHT, 2);
             dayAfter100KW = dayValue - dayBefore100KW;
             dayAfter100 = roundValue(dayAfter100KW * TARIF_AFTER_100, 2);
@@ -120,27 +150,30 @@ const calcCommandTwo = (chatId) => {
         }
 
         const result = dayBefore100 + nightBefore100 + dayAfter100 + nightAfter100;
-        const resultCommandOne = calcCommandOneResult(summary);
+        const resultCommandOne = calcCommandOneResult(summary, privilege);
 
         const md = `
-Тариф < 100 КВт:      ${TARIF_BEFORE_100.toFixed(2)} грн.
-Тариф > 100 КВт:      ${TARIF_AFTER_100.toFixed(2)} грн.
+Тариф < ${privilege} КВт:      ${TARIF_BEFORE_100.toFixed(2)} грн.
+Тариф > ${privilege} КВт:      ${TARIF_AFTER_100.toFixed(2)} грн.
 ---
 Всего:                ${summary} КВт
 День:                 ${roundValue(dayPercent * 100, 0)} %
 Ночь:                 ${roundValue(nightPercent * 100, 0)} %
-День < 100КВт:        ${dayBefore100KW} КВт - ${dayBefore100.toFixed(2)} грн.
-Ночь < 100КВт:        ${nightBefore100KW} КВт - ${nightBefore100.toFixed(2)} грн.
-День > 100КВт:        ${dayAfter100KW} КВт - ${dayAfter100.toFixed(2)} грн.
-Ночь > 100КВт:        ${nightAfter100KW} КВт - ${nightAfter100.toFixed(2)} грн.
+День < ${privilege}КВт:        ${dayBefore100KW} КВт - ${dayBefore100.toFixed(2)} грн.
+Ночь < ${privilege}КВт:        ${nightBefore100KW} КВт - ${nightBefore100.toFixed(2)} грн.
+День > ${privilege}КВт:        ${dayAfter100KW} КВт - ${dayAfter100.toFixed(2)} грн.
+Ночь > ${privilege}КВт:        ${nightAfter100KW} КВт - ${nightAfter100.toFixed(2)} грн.
 ---
-Экономия:             ${resultCommandOne - result} грн. (${(100 - ((100 * result) / resultCommandOne)).toFixed(0)}%)
+Экономия:             ${(resultCommandOne - result).toFixed(2)} грн. (${(100 - ((100 * result) / resultCommandOne)).toFixed(0)}%)
         `;
-        return bot.sendMessage(chatId, md, {parse_mode: 'Markdown'}).then(function() {
-            bot.sendMessage(chatId, `К оплате: *${result.toFixed(2)}* грн.`, {parse_mode: 'Markdown'});
+        const k = roundValue((nightValue * 0.5 + dayValue) / summary, 4);
+        const block1 = roundValue(k * (summary > privilege ? privilege : summary) * TARIF_BEFORE_100, 2);
+        const block2 = roundValue(k * (summary > privilege ? (summary - privilege) : 0) * TARIF_AFTER_100, 2);
+        return bot.sendMessage(chatId, md, {parse_mode: 'Markdown'}).then(function () {
+            return bot.sendMessage(chatId, `К оплате: *${result.toFixed(2)}* грн. (Способ 2: ${block1 + block2})`, {parse_mode: 'Markdown'});
         });
     } else {
-        return bot.sendMessage(chatId, 'Ой, ошибока');
+        return bot.sendMessage(chatId, 'Ой, ошибочка');
     }
 };
 
@@ -151,14 +184,26 @@ const showChoose = (chatId) => {
             inline_keyboard: [
                 [
                     {
-                        text: 'Просчет тарифа для 1 зонного счетчика',
+                        text: 'Тариф 1 зона',
                         callback_data: '1'
                     }
                 ],
                 [
                     {
-                        text: 'Просчет тарифа для 2 зонного счетчика',
+                        text: 'Тариф 2 зоны',
                         callback_data: '2'
+                    }
+                ],
+                [
+                    {
+                        text: 'Тариф 2 зоны (3000)',
+                        callback_data: '3'
+                    }
+                ],
+                [
+                    {
+                        text: 'Проверка отключений',
+                        callback_data: '4'
                     }
                 ],
                 // [
@@ -176,17 +221,40 @@ const roundValue = (value, digits) => {
     return parseFloat(parseFloat(value).toFixed(digits));
 };
 
-// const express = require('express');
-// const app = express();
-// const path = require('path');
-//
-// app.get('/', function (req, res) {
-//     res.sendFile(path.join(__dirname + '/index.html'));
+const express = require('express');
+const app = express();
+const path = require('path');
+
+app.get('/', function (req, res) {
+    res.sendFile(path.join(__dirname + '/index.html'));
+});
+
+// app.get('/mailing1', function (req, res) {
+//     bot.sendMessage(mailingIds[0], '1/n2\n3').then(() => {
+//         res.status(200).send();
+//     });
 // });
-//
-// const server = app.listen(process.env.PORT || 5000, function () {
-//     const host = server.address().address;
-//     const port = server.address().port;
-//
-//     console.log(`Web server started at http://${host}:${port}`, host, port);
-// });
+
+app.get('/mailing', function (req, res) {
+    checkDisconnectModule.checkDisconnectPeriod(moment(), moment().add(2, 'days'), MAILING_REGIONS.split(';'), MAILING_STREET)
+        .then(messages => {
+            const allMessages = [];
+            mailingIds.forEach(id => {
+                Array.prototype.push.apply(allMessages, messages.map(m => bot.sendMessage(id, m)));
+            });
+            return Promise.all(allMessages);
+        })
+        .catch(error => {
+            console.log(error);
+            res.status(500).send();
+        }).finally(() => {
+        res.status(200).send();
+    });
+});
+
+const server = app.listen(process.env.PORT || 5000, function () {
+    const host = server.address().address;
+    const port = server.address().port;
+
+    console.log(`Web server started at http://${host}:${port}`, host, port);
+});
