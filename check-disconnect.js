@@ -94,7 +94,7 @@ module.exports = {
                         const messages = [];
                         Object.keys(resultObject).forEach(key => {
                             if (resultObject[key] && resultObject[key].length) {
-                                Array.prototype.push.apply(messages, resultObject[key].map(x => `Отключение\n${x}`));
+                                Array.prototype.push.apply(messages, resultObject[key].map(x => `Отключение ${key}\n${x}`));
                             }
                         });
                         if (!messages.length) {
