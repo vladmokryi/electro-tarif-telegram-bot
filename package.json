@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "express": "^4.16.4",
-    "moment": "^2.29.1",
+    "moment": "^2.29.4",
     "node-html-parser": "^2.0.1",
     "node-telegram-bot-api": "^0.30.0"
   },
